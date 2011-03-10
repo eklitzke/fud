@@ -1,4 +1,5 @@
 import os
+import sys
 import logging
 import Queue as queue
 import resource
@@ -17,8 +18,8 @@ except ImportError:
 _handlers = []
 _http_server = None
 _http_lock = threading.Lock()
-_frame_queue = queue.Queue(maxsize=1)
-#_frame_queue = queue.Queue()
+#_frame_queue = queue.Queue(maxsize=1)
+_frame_queue = queue.Queue()
 
 log = logging.getLogger('fud.tornado_server')
 
@@ -60,8 +61,6 @@ class _CurrentFrame(object):
 
             self._condition.wait()
 
-def get_frame
-
 class RequestHandlerType(type(tornado.web.RequestHandler)):
 
     def __init__(cls, name, bases, cls_dict):
@@ -70,6 +69,10 @@ class RequestHandlerType(type(tornado.web.RequestHandler)):
 class RequestHandler(tornado.web.RequestHandler):
 
     __metaclass__ = RequestHandlerType
+
+    def __init__(self, *args, **kwargs):
+        print 'initializing thingy'
+        return super(RequestHandler, self).__init__(*args, **kwargs)
 
     def initialize(self):
         print 'RequestHandler -> in %s' % (self.__class__.__name__,)
@@ -109,8 +112,7 @@ class ResourceHandler(RequestHandler):
 
         rusage = resource.getrusage(resource.RUSAGE_SELF)
         rusage_dict = dict((k, getattr(rusage, k)) for k in rusage.__class__.__dict__.iterkeys() if k.startswith('ru_'))
-        return self.render_json({'memory': memory,
-                                 'rusage': rusage_dict})
+        return self.render_json({'memory': memory, 'rusage': rusage_dict})
 
 class FramePoller(RequestHandler):
 
@@ -121,7 +123,7 @@ class FramePoller(RequestHandler):
 
     def get(self):
 
-        print 'in frame poller'
+        print >> sys.stderr, 'in frame poller'
         with self.frame_lock:
             frame = self.__class__.current_frame
             if frame is None:
@@ -138,22 +140,23 @@ class FramePoller(RequestHandler):
         else:
             self.render_json({'stopped': False})
 
-def get_server(**kw):
+def get_server(io_loop, **kw):
     global _http_server
 
     try:
         _http_lock.acquire()
 
+        print 'fud io_loop is %r' % (io_loop,)
         if _http_server is None:
             log.info('creating tornado http server')
             port = kw.pop('port', 8080)
-            io_loop = kw.pop('io_loop', tornado.ioloop.IOLoop.instance())
 
             kw.setdefault('debug', True)
             kw.setdefault('template_path', '/home/evan/code/fud/fud/templates')
             kw.setdefault('static_path', '/home/evan/code/fud/fud/static')
 
             routes = [(h.path, h) for h in _handlers if getattr(h, 'path', None)]
+            print 'routes are %s' % (routes,)
             app = tornado.web.Application(routes, **kw)
 
             _http_server = tornado.httpserver.HTTPServer(app)
