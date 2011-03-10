@@ -1,0 +1,50 @@
+<html>
+  <head>
+	<title>FUD Python Debugger</title>
+	<link type="text/css" rel="stylesheet" href="{{static_url('css/reset-min.css')}}">
+	<link type="text/css" rel="stylesheet" href="{{static_url('css/debugger.css')}}">
+	<script type="text/javascript" src="{{static_url('js/jquery.min.js')}}"></script>
+  </head>
+  <body>
+	<div id="status">
+	  <img id="status_img" src="{{static_url('img/blank.png')}}">
+	  <span id="status_text"></span>
+	</div>
+	<h3>System</h3>
+	<div class="clearfix">
+	  <div class="left">
+		<h4>Process Info</h4>
+		<table>
+		  <tr><td>PID</td><td class="mono">{{ pid }}</td></tr>
+		  <tr><td>Command</td><td class="mono">{{ process_cmd }}</td></tr>
+		</table>
+	  </div>
+	  <div class="left">
+		<h4>Memory</h4>
+		<table>
+		  <tr><td>Virtual</td><td id="resources-memory-vsz">unknown</td></tr>
+		  <tr><td>Resident</td><td id="resources-memory-rss">unknown</td></tr>
+		  <tr><td>Shared</td><td id="resources-memory-shr">unknown</td></tr>
+		</table>
+	  </div>
+	  <div class="left">
+		<h4>CPU</h4>
+		<table>
+		  <tr><td>User</td><td id="resources-cpu-usertime"></td></tr>
+		  <tr><td>System</td><td id="resources-cpu-systemtime"></td></tr>
+		</table>
+	  </div>
+	</div>
+
+	<h3>Stack Trace</h3>
+	<span id="active_frame">
+	  (no stack trace active)
+	</span>
+
+	<h3>Console</h3>
+	<textarea id="dbg_console" class="console" cols=80 rows=5 disabled="disabled"></textarea>
+	<br>
+	<button id="dbg_button" disabled="disabled">Evaluate</button>
+  </body>
+  <script type="text/javascript" src="{{static_url('js/init.js')}}"></script>
+</html>

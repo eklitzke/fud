@@ -1,0 +1,11 @@
+{
+  "name": "FUD",
+  "version": "0.1",
+  "description": "A remote Python debugger",
+  "browser_action": {
+    "default_icon": "python19.png",
+    "default_title": "FUD Python Debugger"
+  },
+  "background_page": "background.html",
+  "permissions": ["tabs"]
+}

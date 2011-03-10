@@ -1,0 +1,35 @@
+@import url(http://fonts.googleapis.com/css?family=Inconsolata);
+
+/* @import url(http://fonts.googleapis.com/css?family=Allerta);
+body { background-image: url('/static/img/static.png'); color: #ffaa00; font-family: 'Allerta', sans-serif; padding: 1em; font-size: 100%; } */
+body { background-image: url('/static/img/static.png'); color: #ffaa00; font-family: 'Inconsolata', monospace; padding: 1em; font-size: 100%; }
+
+h1 { font-size: 200%; font-weight: bold; }
+h2 { font-size: 170%; font-weight: bold; }
+h3 { font-size: 150%; font-weight: bold; color: #ff0000; }
+h4 { font-size: 120%; font-weight: bold; color: #ff7400; margin: 0.2em 0; }
+
+td { padding-right: 1em; }
+button { font-family: 'Allerta', sans-serif; font-size: 100%; }
+
+#status { font-size: 200%; font-weight: bold; margin-left: 1em; }
+
+.mono { font-family: "Inconsolata", monospace; font-weight: bold; }
+.console { background-color: #e0d6d4; font-family: "Inconsolata", monospace; font-weight: bold; }
+.left { float: left; }
+.red { color: #f00; }
+.green { color: #393; }
+
+
+.clearfix:after {
+    content: ".";
+    display: block;
+    clear: both;
+    visibility: hidden;
+    line-height: 0;
+    height: 0;
+}
+ 
+.clearfix {
+    display: inline-block;
+}
