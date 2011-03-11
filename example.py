@@ -49,9 +49,12 @@ def main(port=8888):
     application = tornado.web.Application([
             ('/', HomeHandler),
             ('/time', TimeHandler)])
-    http_server = tornado.httpserver.HTTPServer(application)
+
+    io_loop = tornado.ioloop.IOLoop()
+    http_server = tornado.httpserver.HTTPServer(application, io_loop=io_loop)
     http_server.listen(port)
-    tornado.ioloop.IOLoop.instance().start()
+    print 'main io_loop is %r' % (io_loop,)
+    io_loop.start()
 
 if __name__ == '__main__':
     main()

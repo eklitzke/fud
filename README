@@ -1,0 +1,12 @@
+FUD is a python debugger. The goal is to make a module that can create a new
+Python thread that hooks into Python's tracing system to provide debugging
+capabilities. The debugger is accessed via a Chrome extension that pops up a new
+window and gives you a console and real time CPU, memory, etc. statistics.
+
+My goal is that FUD will make it possible to debug Python processes embedded in
+server runtimes (e.g. inside of an HTTP server, or some other Python
+daemon). The conventional means of doing this, by running the server in
+foreground mode (e.g. running `apache -X -k start`), is slow, difficult to use,
+and inflexible.
+
+It doesn't work yet, at all. So don't expect it to.

@@ -13,10 +13,11 @@ class Fud(Bdb):
             return instance
 
     def set_trace(self, frame=None):
-        print 'in set_trace'
         Bdb.set_trace(self, frame)
 
     def user_line(self, frame):
-        fud.tornado_server.enqueue_frame(frame)
+        print 'in user_line'
         Bdb.user_line(self, frame)
-        print 'enqueued'
+        fud.tornado_server.current_frame.set_frame(frame)
+        print 'exiting user_line'
+        #fud.tornado_server.wait_frame()

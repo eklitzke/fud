@@ -1,4 +1,5 @@
 from functools import wraps
+import sys
 import time
 import thread
 import threading
@@ -12,19 +13,15 @@ class TornadoThread(threading.Thread):
     def __init__(self, port):
         threading.Thread.__init__(self)
         self.port = port
+        self.daemon = True
 
     def run(self):
         # n.b. always get a new io loop, don't use IOLoop.instance()
         import fud.tornado_server
         io_loop = tornado.ioloop.IOLoop()
-
-        def stupid_timeout():
-            print '-- derr, timeout'
-            io_loop.add_timeout(time.time() + 1, stupid_timeout)
-
-        http_server = fud.tornado_server.get_server(port=self.port, io_loop=io_loop)
-        io_loop.add_callback(stupid_timeout)
+        http_server = fud.tornado_server.get_server(io_loop, port=self.port)
         try:
+            print 'starting fud i/o loop'
             io_loop.start()
         finally:
             print 'fud i/o loop stopped'

@@ -65,7 +65,9 @@ $(document).ready(function () {
 
 	setImmediateInterval(function () {
 		$.get('/poll_frame_queue', function (data) {
-			$('#active_frame > *').remove();
+			//$('#active_frame > *').remove();
+			$('#active_frame').children().remove();
+			$('#active_frame').text('');
 			if (data.stopped) {
 				$('#active_frame').
 					append('File ').

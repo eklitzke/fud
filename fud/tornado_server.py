@@ -1,7 +1,9 @@
 import os
+import sys
 import logging
 import Queue as queue
 import resource
+import thread
 import threading
 
 import tornado.ioloop
@@ -33,34 +35,27 @@ current_frame = None
 class _CurrentFrame(object):
 
     def __init__(self):
-        self._frame_lock = threading.RLock()
-        self._condition = threading.Condition(self._frame_lock)
+        self._lock = thread.allocate_lock()
         self._current_frame = None
 
-    @property
-    def current_frame(self):
-        with self._frame_lock:
-            return self._current_frame
+    def get_frame(self):
+        # this is atomic, even though it doesn't look like it
+        return self._current_frame
 
-    def release_frame(self):
-        with self._frame_lock:
+    def release(self):
+        if self._lock.locked():
             self._current_frame = None
-            self._condition.notify()
+            self._lock.release()
 
-    def set_frame(self, f):
-        with self._frame_lock:
-            if self._current_frame is None:
-                self._current_frame = f
-                return
+    def set_frame(self, frame):
+        self._lock.acquire()
+        self._current_frame = frame
 
-        while True:
-            self._condition.wait()
-            if self._current_frame is None:
-                self._current_frame = f
+        # wait for the lock to be released by another thread
+        self._lock.acquire()
+        self._lock.release()
 
-            self._condition.wait()
-
-def get_frame
+current_frame = _CurrentFrame()
 
 class RequestHandlerType(type(tornado.web.RequestHandler)):
 
@@ -72,7 +67,6 @@ class RequestHandler(tornado.web.RequestHandler):
     __metaclass__ = RequestHandlerType
 
     def initialize(self):
-        print 'RequestHandler -> in %s' % (self.__class__.__name__,)
         log.info('in %s' % (self.__class__.__name__,))
         self.env = {}
 
@@ -89,7 +83,6 @@ class InitializeHandler(RequestHandler):
     path = '/init'
 
     def get(self):
-        print '/init being served'
         self.env['pid'] = os.getpid()
         self.env['process_cmd'] = open('/proc/self/cmdline').read().replace('\0', ' ').strip()
         self.env['running_threads'] = threading.enumerate()
@@ -109,27 +102,14 @@ class ResourceHandler(RequestHandler):
 
         rusage = resource.getrusage(resource.RUSAGE_SELF)
         rusage_dict = dict((k, getattr(rusage, k)) for k in rusage.__class__.__dict__.iterkeys() if k.startswith('ru_'))
-        return self.render_json({'memory': memory,
-                                 'rusage': rusage_dict})
+        return self.render_json({'memory': memory, 'rusage': rusage_dict})
 
 class FramePoller(RequestHandler):
 
     path = '/poll_frame_queue'
 
-    current_frame = None
-    frame_lock = threading.Lock()
-
     def get(self):
-
-        print 'in frame poller'
-        with self.frame_lock:
-            frame = self.__class__.current_frame
-            if frame is None:
-                try:
-                    frame = self.__class__.current_frame = _frame_queue.get(False)
-                except queue.Empty:
-                    self.__class__.current_frame = None
-
+        frame = current_frame._current_frame # yep, this is atomic
         print '-- /poll_frame_queue, frame = %r '% (frame,)
         if frame is not None:
             self.render_json({'stopped': True,
@@ -138,7 +118,7 @@ class FramePoller(RequestHandler):
         else:
             self.render_json({'stopped': False})
 
-def get_server(**kw):
+def get_server(io_loop, **kw):
     global _http_server
 
     try:
@@ -147,7 +127,6 @@ def get_server(**kw):
         if _http_server is None:
             log.info('creating tornado http server')
             port = kw.pop('port', 8080)
-            io_loop = kw.pop('io_loop', tornado.ioloop.IOLoop.instance())
 
             kw.setdefault('debug', True)
             kw.setdefault('template_path', '/home/evan/code/fud/fud/templates')
@@ -156,8 +135,7 @@ def get_server(**kw):
             routes = [(h.path, h) for h in _handlers if getattr(h, 'path', None)]
             app = tornado.web.Application(routes, **kw)
 
-            _http_server = tornado.httpserver.HTTPServer(app)
-            print 'fud server listening on port %d' % (port,)
+            _http_server = tornado.httpserver.HTTPServer(app, io_loop=io_loop)
             _http_server.listen(port)
     finally:
         _http_lock.release()
