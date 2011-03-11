@@ -110,7 +110,6 @@ class FramePoller(RequestHandler):
 
     def get(self):
         frame = current_frame._current_frame # yep, this is atomic
-        print '-- /poll_frame_queue, frame = %r '% (frame,)
         if frame is not None:
             self.render_json({'stopped': True,
                               'co_filename': frame.f_code.co_filename,
@@ -123,6 +122,8 @@ class Continue(RequestHandler):
     path = '/continue'
 
     def post(self):
+        from fud.debugger import Fud
+        Fud.instance().set_continue()
         current_frame.release()
         self.render_json({'status': 'ok'})
 
