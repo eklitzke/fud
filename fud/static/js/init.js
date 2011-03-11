@@ -1,5 +1,6 @@
 var state = {
-	"stopped": false
+	"stopped": false,
+	"pollInterval": null
 };
 
 function setImmediateInterval(func, ival) {
@@ -25,19 +26,23 @@ function formatFloat(num) {
 
 $(document).ready(function () {
 
-	if (state.stopped) {
-		$('#status_img').attr('src', '/static/img/octagon.png');
-		$('#status_text').
-			removeClass('green').
-			addClass('red').
-			text('Stopped');
-	} else {
-		$('#status_img').attr('src', '/static/img/circle.png');
-		$('#status_text').
-			addClass('green').
-			removeClass('red').
-			text('Running');
-	}
+	var toggleState = function (newState) {
+		state.stopped = newState;
+		if (newState) {
+			$('#status_img').attr('src', '/static/img/octagon.png');
+			$('#status_text').
+				removeClass('green').
+				addClass('red').
+				text('Stopped');
+		} else {
+			$('#status_img').attr('src', '/static/img/circle.png');
+			$('#status_text').
+				addClass('green').
+				removeClass('red').
+				text('Running');
+		}
+	};
+	toggleState();
 
 	// update "resources" once a second
 	setImmediateInterval(function () {
@@ -63,21 +68,47 @@ $(document).ready(function () {
 		});
 	}, 1000);
 
-	setImmediateInterval(function () {
+	/* remove all child nodes and text from #active_frame */
+	var clearActiveFrame = function () {
+		$('#active_frame').children().remove();
+		$('#active_frame').text('');
+	};
+
+	var pollUntilStopped = function () {
 		$.get('/poll_frame_queue', function (data) {
-			//$('#active_frame > *').remove();
-			$('#active_frame').children().remove();
-			$('#active_frame').text('');
+			console.info(data.stopped);
 			if (data.stopped) {
+				toggleState(true);
+				clearInterval(state.pollInterval);
+				
+
+				/* add the tb information */
+				clearActiveFrame();
 				$('#active_frame').
 					append('File ').
 					append($('<code></code>').text(data.co_filename)).
 					append(' line ').
 					append($('<code></code>').text(data.f_lineno));
-			} else {
-				$('#active_frame').text('(not stopped)');
-			}
-		});
-	}, 100);
 
+				$('#continue_button').remove(); /* should be a no-op, but just in case */
+				$('#frame_button_container').append(
+					$('<button id="continue_button"></button>').
+						text('continue').
+						click(function () {
+							/* mark the state as stopped, and start polling again */
+							$.post('/continue', function (data) {
+								toggleState(false);
+								clearActiveFrame();
+								$('#active_frame').text('nothing to see here');
+								state.pollInterval = setInterval(pollUntilStopped, 100);
+							});
+						}));
+				}
+		});
+	};
+
+	/* should always be true */
+	if (!state.stopped) {
+		state.pollInterval = setInterval(pollUntilStopped, 100);
+	}
 });

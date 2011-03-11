@@ -67,7 +67,7 @@ class RequestHandler(tornado.web.RequestHandler):
     __metaclass__ = RequestHandlerType
 
     def initialize(self):
-        log.info('in %s' % (self.__class__.__name__,))
+        super(RequestHandler, self).initialize()
         self.env = {}
 
     def render_json(self, data={}):
@@ -117,6 +117,14 @@ class FramePoller(RequestHandler):
                               'f_lineno': frame.f_lineno})
         else:
             self.render_json({'stopped': False})
+
+class Continue(RequestHandler):
+
+    path = '/continue'
+
+    def post(self):
+        current_frame.release()
+        self.render_json({'status': 'ok'})
 
 def get_server(io_loop, **kw):
     global _http_server
