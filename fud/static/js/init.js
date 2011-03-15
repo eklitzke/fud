@@ -77,7 +77,12 @@ $(document).ready(function () {
 	var pollUntilStopped = function () {
 		$.get('/poll_frame_queue', function (data) {
 			console.info(data.stopped);
-			if (data.stopped) {
+			if (data.stopped && state.stopped === true) {
+				/* race condition, happens when the callback below is scheduled
+				 * while the trace is stopping.
+				 */
+				state.stopped = true;
+			} else if (data.stopped && state.stopped == false) {
 				toggleState(true);
 				clearInterval(state.pollInterval);
 				
